@@ -1,5 +1,5 @@
 import Footer from "@/app/components/footer";
-import { tenorSans } from "@/app/layout";
+import { tenorSans } from "@/app/page";
 import { allPosts } from "contentlayer/generated";
 import { format, parseISO } from "date-fns";
 import { getMDXComponent } from "next-contentlayer/hooks";
