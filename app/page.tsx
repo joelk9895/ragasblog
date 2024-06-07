@@ -1,9 +1,14 @@
 import { JSX, SVGProps } from "react";
-import { tenorSans } from "./layout";
 import { BlogCard } from "./components/blogCard";
 import { allPosts, Post } from "contentlayer/generated";
 import Footer from "./components/footer";
 import { compareDesc } from "date-fns";
+import { Tenor_Sans } from "next/font/google";
+
+export const tenorSans = Tenor_Sans({
+  subsets: ["latin"],
+  weight: "400",
+});
 
 export default function Component() {
   const posts = allPosts.sort((a, b) =>

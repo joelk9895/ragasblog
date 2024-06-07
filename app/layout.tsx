@@ -1,11 +1,7 @@
 import type { Metadata } from "next";
-import { Tenor_Sans } from "next/font/google";
 import "./globals.css";
 
-export const tenorSans = Tenor_Sans({
-  subsets: ["latin"],
-  weight: "400",
-});
+
 
 export const metadata: Metadata = {
   title: "Create Next App",
