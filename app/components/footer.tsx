@@ -1,4 +1,4 @@
-import { tenorSans } from "../layout";
+import { tenorSans } from "../page";
 
 export default function Footer() {
   return (
