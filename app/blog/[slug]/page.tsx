@@ -1,24 +1,36 @@
-"use client";
 import Footer from "@/app/components/footer";
 import { tenorSans } from "@/app/page";
 import { allPosts } from "contentlayer/generated";
 import { format, parseISO } from "date-fns";
 import { useMDXComponent } from "next-contentlayer/hooks";
-
+import { Code } from "bright";
 import type { MDXComponents } from "mdx/types";
 import { notFound } from "next/navigation";
-import "./style.css";
-import hljs from "highlight.js";
 import Image from "next/image";
+import "./style.css";
+
 
 interface PostPageProps {
   params: { slug: string };
 }
 
-export async function getStaticParams() {
+export async function generateStaticParams() {
   return allPosts.map((post) => ({
     slug: post._raw.flattenedPath,
   }));
+}
+
+export async function generateMetadata({ params }: PostPageProps) {
+  const post = allPosts.find((post) => post._raw.flattenedPath === params.slug);
+
+  if (!post) {
+    notFound();
+  }
+
+  return {
+    title: post.title,
+    description: `Read ${post.title} by ${post.author}`,
+  };
 }
 
 export default function PostPage({ params }: PostPageProps) {
@@ -39,6 +51,7 @@ export default function PostPage({ params }: PostPageProps) {
       }
       return <a href={href}>{children ?? ""}</a>;
     },
+    pre: Code,
   };
 
   return (
@@ -46,7 +59,7 @@ export default function PostPage({ params }: PostPageProps) {
       <header className="dark:text-white py-4 px-6 md:px-8 lg:px-10 w-screen">
         <h1 className={`${tenorSans.className} text-3xl`}>ragas</h1>
       </header>
-      <div className="w-screen h-screen flex flex-col items-center pt-10">
+      <div className="w-screen h-auto flex flex-col items-center pt-10">
         <h2 className="text-white font-extrabold text-5xl w-[60vw] mb-5">
           {post.title}
         </h2>
