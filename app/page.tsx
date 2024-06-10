@@ -4,6 +4,7 @@ import { allPosts, Post } from "contentlayer/generated";
 import Footer from "./components/footer";
 import { compareDesc } from "date-fns";
 import { Tenor_Sans } from "next/font/google";
+import "@code-hike/mdx/dist/index.css";
 
 export const tenorSans = Tenor_Sans({
   subsets: ["latin"],

@@ -1,11 +1,12 @@
+"use client";
 import Footer from "@/app/components/footer";
 import { tenorSans } from "@/app/page";
 import { allPosts } from "contentlayer/generated";
 import { format, parseISO } from "date-fns";
-import { getMDXComponent } from "next-contentlayer/hooks";
+import { useMDXComponent } from "next-contentlayer/hooks";
+
 import type { MDXComponents } from "mdx/types";
 import { notFound } from "next/navigation";
-import "highlight.js/styles/default.css";
 import "./style.css";
 import hljs from "highlight.js";
 import Image from "next/image";
@@ -14,7 +15,7 @@ interface PostPageProps {
   params: { slug: string };
 }
 
-export async function generateStaticParams() {
+export async function getStaticParams() {
   return allPosts.map((post) => ({
     slug: post._raw.flattenedPath,
   }));
@@ -27,7 +28,7 @@ export default function PostPage({ params }: PostPageProps) {
     notFound();
   }
 
-  const MDXContent = getMDXComponent(post.body.code);
+  const MDXContent = useMDXComponent(post.body.code);
 
   const MDXComponents: MDXComponents = {
     a: ({ href, children }) => {
@@ -37,16 +38,6 @@ export default function PostPage({ params }: PostPageProps) {
         return <a href={href}>Link</a>;
       }
       return <a href={href}>{children ?? ""}</a>;
-    },
-    code: ({ children }) => {
-      return (
-        <code
-          className="hljs rounded-lg"
-          dangerouslySetInnerHTML={{
-            __html: hljs.highlightAuto(String(children)).value,
-          }}
-        ></code>
-      );
     },
   };
 
