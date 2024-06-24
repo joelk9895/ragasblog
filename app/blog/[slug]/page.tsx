@@ -9,7 +9,6 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import "./style.css";
 
-
 interface PostPageProps {
   params: { slug: string };
 }
@@ -39,7 +38,6 @@ export default function PostPage({ params }: PostPageProps) {
   if (!post) {
     notFound();
   }
-
   const MDXContent = useMDXComponent(post.body.code);
 
   const MDXComponents: MDXComponents = {

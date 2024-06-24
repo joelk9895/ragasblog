@@ -66,20 +66,28 @@ async function fetchPages(databaseId) {
 
   let i = 1;
   for (const post of posts) {
-    const title = post.properties.title.title[0].plain_text;
+    const title = post.properties.title.title[0].plain_text
+      .replace(/'/g, "&apos;")
+      .replace(/"/g, "&quot;");
     const slug = post.properties.slug.rich_text[0].plain_text;
     const image = post.properties.Background.files[0].file.url;
-    const imageFileName = post.properties.Background.files[0].name;
+    const imageFileName = post.properties.Background.files[0].name
+      .replace(/'/g, "&apos;")
+      .replace(/"/g, "&quot;");
     const date = post.properties.date.date.start;
-    const author = post.properties.Author.people[0].name;
+    const author = post.properties.Author.people[0].name
+      .replace(/'/g, "&apos;")
+      .replace(/"/g, "&quot;");
     const authorAvatar = post.properties.Author.people[0].avatar_url;
     const mdBlocks = await n2m.pageToMarkdown(post.id);
     const mdString = n2m.toMarkdownString(mdBlocks);
     const readTime = calculateReadTime(mdString.parent);
 
     const filePath = path.join("posts", `${slug}.mdx`);
-    const newContent = mdString.parent;
-    console.log`newContent: ${newContent}`;
+    const newContent = mdString.parent
+      .replace(/'/g, "&apos;")
+      .replace(/"/g, "&quot;");
+    console.log(`newContent: ${newContent}`);
 
     // Check if the file already exists and if the content is the same
     if (fs.existsSync(filePath)) {
