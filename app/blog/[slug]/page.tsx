@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { unified } from "unified";
-import { Node, Parent } from "unist";
+import { Node } from "unist";
 import remarkParse from "remark-parse";
 import remarkMath from "remark-math";
 import remarkRehype from "remark-rehype";
@@ -18,7 +18,15 @@ import Footer from "@/app/components/footer";
 
 interface PostPageProps {
   params: { slug: string };
-  content: string;
+}
+
+interface PostData {
+  title: string;
+  author: string;
+  authorAvatar: string;
+  date: string;
+  readTime: string;
+  image: string;
 }
 
 async function cleanContent(slug: string): Promise<string> {
@@ -89,7 +97,8 @@ export async function generateStaticParams() {
 export default async function PostPage({ params }: PostPageProps) {
   const { slug } = params;
   const content = await cleanContent(slug);
-  const { data } = matter(getPostContent(slug));
+  const fileContent = getPostContent(slug);
+  const { data } = matter(fileContent) as unknown as { data: PostData };
   console.log(data);
 
   return (

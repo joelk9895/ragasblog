@@ -1,16 +1,10 @@
-import { JSX, SVGProps } from "react";
 import { BlogCard } from "./components/blogCard";
 import Footer from "./components/footer";
-import { compareDesc } from "date-fns";
-import { Tenor_Sans } from "next/font/google";
+
 import "@code-hike/mdx/dist/index.css";
 import getAllPosts from "./components/getAllPosts";
 import { getPostMetadata } from "./components/getPostMetadata";
-
-export const tenorSans = Tenor_Sans({
-  subsets: ["latin"],
-  weight: "400",
-});
+import { tenorSans } from "./components/font";
 
 export interface Post {
   _id: string;
