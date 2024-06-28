@@ -15,6 +15,7 @@ import matter from "gray-matter";
 import Image from "next/image";
 import { format } from "date-fns";
 import Footer from "@/app/components/footer";
+import { revalidatePath } from "next/cache";
 
 interface PostPageProps {
   params: { slug: string };
@@ -91,7 +92,7 @@ export async function generateStaticParams() {
   const files = fs.readdirSync(folder);
   const posts = files.filter((file) => file.endsWith(".mdx"));
   const slugs = posts.map((post) => post.replace(".mdx", ""));
-  return slugs.map((slug) => ({ slug }));
+  return slugs.map((slug) => ({ slug, revalidatePath: 10 }));
 }
 
 export default async function PostPage({ params }: PostPageProps) {
