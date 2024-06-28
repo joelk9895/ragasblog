@@ -1,86 +1,128 @@
-import Footer from "@/app/components/footer";
-import { tenorSans } from "@/app/page";
-import { allPosts } from "contentlayer/generated";
-import { format, parseISO } from "date-fns";
-import { useMDXComponent } from "next-contentlayer/hooks";
-import { Code } from "bright";
-import type { MDXComponents } from "mdx/types";
-import { notFound } from "next/navigation";
+import fs from "fs";
+import path from "path";
+import { unified } from "unified";
+import { Node, Parent } from "unist";
+import remarkParse from "remark-parse";
+import remarkMath from "remark-math";
+import remarkRehype from "remark-rehype";
+import rehypeKatex from "rehype-katex";
+import remarkGFM from "remark-gfm";
+import rehypeStringify from "rehype-stringify";
+import { visit } from "unist-util-visit";
+import "katex/dist/katex.min.css";
+import getPostContent from "@/app/components/getPostContent";
+import matter from "gray-matter";
 import Image from "next/image";
-import "./style.css";
+import { format } from "date-fns";
+import Footer from "@/app/components/footer";
 
 interface PostPageProps {
   params: { slug: string };
+  content: string;
+}
+
+async function cleanContent(slug: string): Promise<string> {
+  const fileContent = getPostContent(slug);
+  const { content } = matter(fileContent);
+
+  const result = await unified()
+    .use(remarkParse)
+    .use(remarkMath)
+    .use(remarkRehype)
+    .use(rehypeKatex)
+    .use(remarkGFM)
+    .use(() => {
+      return (tree: Node) => {
+        visit(tree, "element", (node: any) => {
+          if (
+            node.tagName === "a" &&
+            node.properties &&
+            node.properties.href &&
+            (node.properties.href.startsWith("https://www.youtube.com") ||
+              node.properties.href.startsWith("https://youtu.be"))
+          ) {
+            const url = node.properties.href as string;
+            let embedUrl: string = "";
+
+            if (url.startsWith("https://www.youtube.com")) {
+              embedUrl = url.replace("/watch?v=", "/embed/");
+            } else if (url.startsWith("https://youtu.be")) {
+              embedUrl = url.replace(
+                "https://youtu.be/",
+                "https://www.youtube.com/embed/"
+              );
+            }
+            embedUrl += "?modestbranding=1&color=white";
+
+            node.tagName = "iframe";
+            node.properties = {
+              ...node.properties,
+              src: embedUrl,
+              width: "560",
+              height: "315",
+              frameBorder: "0",
+              className: "w-full rounded-xl",
+              referrerpolicy: "strict-origin-when-cross-origin",
+              allow:
+                "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture ",
+              allowFullScreen: true,
+            };
+            node.children = [];
+          }
+        });
+      };
+    })
+    .use(rehypeStringify)
+    .process(content);
+
+  return result.toString();
 }
 
 export async function generateStaticParams() {
-  return allPosts.map((post) => ({
-    slug: post._raw.flattenedPath,
-  }));
+  const folder = path.join(process.cwd(), "posts");
+  const files = fs.readdirSync(folder);
+  const posts = files.filter((file) => file.endsWith(".mdx"));
+  const slugs = posts.map((post) => post.replace(".mdx", ""));
+  return slugs.map((slug) => ({ slug }));
 }
 
-export async function generateMetadata({ params }: PostPageProps) {
-  const post = allPosts.find((post) => post._raw.flattenedPath === params.slug);
-
-  if (!post) {
-    notFound();
-  }
-
-  return {
-    title: post.title,
-    description: `Read ${post.title} by ${post.author}`,
-  };
-}
-
-export default function PostPage({ params }: PostPageProps) {
-  const post = allPosts.find((post) => post._raw.flattenedPath === params.slug);
-
-  if (!post) {
-    notFound();
-  }
-  const MDXContent = useMDXComponent(post.body.code);
-
-  const MDXComponents: MDXComponents = {
-    a: ({ href, children }) => {
-      if (children === "embed" || children === "video") {
-        return <iframe src={href} className="w-[50vw] aspect-video"></iframe>;
-      } else if (children === "bookmark") {
-        return <a href={href}>Link</a>;
-      }
-      return <a href={href}>{children ?? ""}</a>;
-    },
-    pre: Code,
-  };
+export default async function PostPage({ params }: PostPageProps) {
+  const { slug } = params;
+  const content = await cleanContent(slug);
+  const { data } = matter(getPostContent(slug));
+  console.log(data);
 
   return (
-    <section className="flex flex-col items-center">
-      <header className="dark:text-white py-4 px-6 md:px-8 lg:px-10 w-screen">
-        <h1 className={`${tenorSans.className} text-3xl`}>ragas</h1>
-      </header>
-      <div className="w-screen h-auto flex flex-col items-center pt-10">
-        <h2 className="text-white font-extrabold text-5xl w-[60vw] mb-5">
-          {post.title}
-        </h2>
-        <div className="flex items-center gap-3 w-[60vw] mb-10">
+    <main className="w-screen flex flex-col items-center">
+      <Image
+        src={"/images" + data.image}
+        alt={data.title}
+        width={400}
+        className="lg:w-[40%] h-[400px] object-contain md:w-[90vw] md:rounded-xl"
+        height={400}
+      />
+      <p className="flex">
+        by{" "}
+        {
           <Image
-            src={post.authorAvatar}
-            width={40}
-            height={40}
-            alt={post.author + "'s avatar"}
-            className="rounded-full aspect-[1/1] object-cover"
+            src={data.authorAvatar}
+            width={30}
+            height={30}
+            alt="Author's avatar"
+            className="rounded-full"
           />
-          <p className="text-white text-lg">{post.author}</p>
-          <small className="text-gray-400 text-lg">
-            {format(parseISO(post.date), "LLLL d, yyyy")}
-          </small>
-        </div>
-        <article className="w-[60vw] text-white pb-20">
-          <div className="articleContent">
-            <MDXContent components={MDXComponents} />
-          </div>
+        }
+        {data.author}
+      </p>
+      <p className="text-slate-500">
+        {data.readTime} • {format(new Date(data.date), "dd LLLL yyyy")}
+      </p>
+      <div className="w-[90%] flex justify-center mb-10">
+        <article className="prose prose-img:bg-white prose-img:rounded-xl prose-invert w-full sm:w-[90vw] sm:prose-sm">
+          <div dangerouslySetInnerHTML={{ __html: content }} />
         </article>
-        <Footer />
       </div>
-    </section>
+      <Footer />
+    </main>
   );
 }

@@ -1,0 +1,216 @@
+---
+title: "LLM Evaluation"
+date: 2024-06-27
+author: "Joel K George"
+summary: "This article explores methods for evaluating large language model (LLM) applications, including benchmarks, leaderboards, and traditional and non-traditional metrics. It examines the challenges of evaluating LLM applications, including the need for robust evaluation strategies and the potential pitfalls of relying solely on LLMs for evaluation. The article concludes by discussing case studies and future directions for research in this area."
+image: "/LlM.png"
+authorAvatar: "https://s3-us-west-2.amazonaws.com/public.notion-static.com/410df4f9-8c6d-4a2d-9d15-5c2a0545dac7/IMG_2909.png"
+readTime: "10 min read"
+---
+
+## Introduction
+
+
+The emergence of LLMs as opened up venue for tacking problems which was earlier thought was impossible. The plethora of LLM based applications are proof of this and today we have multiple open and closed LLMs available. But the one question still remains a mystery, how to effectively evaluate LLM based applications?  
+
+
+This article is a result of me exploring my curiosity to answer this question. We will start by understanding methods used to benchmark LLMs, discuss SOTA methods, case studies and challenges in evaluating LLM applications. 
+
+
+### Benchmarking Large language models
+
+
+LLMs are primarily evaluated on a common set of datasets to analyse its capabilities in doing variety of tasks like summarisation, open book question answering etc. There are several public benchmarks available as shown in the table. The metrics used in benchmarking LLMs varies with tasks. Most of the tasks are evaluated using traditional metrics such as exact match, which we will cover in the next section. 
+
+
+| Benchmark                                                                                                                            | Number of tasks |
+| ------------------------------------------------------------------------------------------------------------------------------------ | --------------- |
+| [ Beyond the Imitation Game Benchmark (BIG-bench)](https://github.com/google/BIG-bench/blob/main/bigbench/benchmark_tasks/README.md) | 214             |
+| [lm-evaluation harness](https://github.com/EleutherAI/lm-evaluation-harness)                                                         | 200+            |
+| [Super GLUE](https://super.gluebenchmark.com/)                                                                                       | 9               |
+| [GLUE](https://gluebenchmark.com/)                                                                                                   | 9               |
+| [Multi-task Language Understanding (MMLU)](https://github.com/hendrycks/test)                                                        | 57 (subjects)   |
+| [Inverse scaling prize](https://github.com/inverse-scaling/prize)                                                                    |                 |
+| [Abstraction and reasoning corpus](https://github.com/fchollet/ARC)                                                                  | 400             |
+
+
+One of major concerns about usage of these benchmarks is that the model could have been exposed to datasets during training or finetuning stage. This violates the fundamental rule that test set should be exclusive of training data. 
+
+
+[mention about first section feel free to jump to llm application eval or non traditional]
+
+
+### LLM leaderboards
+
+
+LLM leaderboards provide a living benchmark for different foundational and instruction finetuned LLMs. While the foundational LLM are evaluated on the open datasets their instruction finetuned versions are mostly evaluated using an Elo based rating system.
+
+- Open LLM leaderboard : Provided a wrapper on top of LM evaluation harness
+- HELM : Evaluated Open LLMs on wide variety of open datasets and metrics.
+- Chatbot Arena : Elo rating for instruction finetuned LLMs
+
+## Evaluation metrics
+
+
+Evaluation metrics for LLM can be broadly classified intro traditional and non traditional metrics. Traditional evaluation metrics rely on the arrangement and order of words and phrases in the text and is used in combination where a reference text (ground truth) exists to compare the predictions against. Non traditional metrics make use of semantic structure and capabilities language models itself for evaluating generated text. These techniques can be used with and without a reference text. 
+
+
+### Traditional metrics
+
+
+In this section, we will review some of the popular traditional metrics and their use cases. These metrics operate on character/word/phrase level. 
+
+
+  
+
+- **WER** (Word Error Rate): There is a family of WER-based metrics which measure the edit distance 𝑑 (𝑐, 𝑟), i.e., the number of insertions, deletions, substitutions and, possibly, transpositions required to transform the candidate into the
+reference string.
+- **Exact match:** measures the accuracy of candidate text by matching the generated text with the reference text. Any deviation from reference text will be counted as incorrect. This is only suitable in case of extractive and short form answers where minimal or no deviation from the reference text is expected.
+- **BLEU** (Bilingual Evaluation Understudy): It evaluates candidate text based on how much ngrams in generated text appear in reference text. This was originally proposed to evaluate machine translation systems.  Multiple ngram scores (2gram/3gram) can be calculated and combined using geometric average (BLEU-N). Since it is precision based metrics, it does not penalise False negatives.
+
+![Screenshot_2023-06-28_at_11.03.26_AM.png](/images/image-1719589456632-814.png)
+
+
+$$
+precision = {TP \over (TP + FP)} = {3 \over (3+0)} = 1  
+$$
+
+- **ROGUE** (Recall-Oriented Understudy for Gisting Evaluation): This is similar to BLEU-N in counting ngram matches but is based on recall. A variation of ROGUE, ROUGE-L measures the longest common subsequence (LCS) between a pair of sentences.
+
+Other than these, there are other metics like METEOR, General Text Matcher (GTM), etc. These metrics are very much constrained and does not go along with the current generational capabilities of large language models. Even-though these metrics are currently only suited for tasks and datasets with short form, extractive or multi choice answers, these method or derivatives are still used as evaluation metrics in many of the benchmarks. 
+
+
+### Non traditional metrics 
+
+
+Non traditional metrics for evaluating generated text can be further classified as embedding based and LLM assisted methods. While embedding based methods leverage token or sentence vectors produced by deep learning models LLM assisted methods form paradigms and leverage language models capabilities to evaluate candidate text. 
+
+
+### Embedding based methods
+
+
+The key idea here is to leverage vector representation of text from DL models that represent rich semantic and syntactic information to compare the candidate text to reference text. The similarity of candidate text with reference text is quantified using methods such as cosine similarity. 
+
+- **BERTScore**:  This is bi-encoded based approach, ie the candidate text and reference text are fed into the DL model separately to obtain embeddings. The token level embeddings are then used to calculate pairwise cosine similarity matrix. Then similarity scores of most similar tokens from reference to candidates are selected and used to calculate precision, recall and f1 score.
+
+	![Screenshot_2023-06-28_at_12.36.25_PM.png](/images/image-1719589458249-208.png)
+
+- **MoverScore:** uses the concept of _word movers distance_ which suggests that distances and between embedded word vectors are to some degree semantically meaningful ( vector(king) - vector(queen) = vector(man) ) and uses contextual embeddings to calculate Euclidean similarity between n-grams. In contrast to BERTscore which allows one-to-one hard matching of words, MoverScore allows many-to-one matching as it uses soft/partial alignments.
+
+	![Screenshot_2023-06-28_at_1.49.17_PM.png](/images/image-1719589459384-227.png)
+
+
+	Even though embeddings based methods are robust they assume that training and test data is identically distributed which may not always the case. 
+
+
+	### Other Language model based metrics
+
+
+	 
+
+	- **Entailment score** : This method leverages natural language inference capabilities of language models to judge NLG. There are different variants of this method but the basic concept is to score the generation by using a NLI model to produce the entailment score against the reference text. This method can be very useful to ensure faithfulness for text grounded generation tasks like text summarisation.
+
+	![NLI.png](/images/image-1719589459717-577.png)
+
+	- **BLEURT**: Introduces an approach to to combine expressivity and robustness by pre-training a fully learned metric on large amounts of synthetic data, before fine-tuning it on human ratings. The method makes use to BERT model to achieve this. To generalise the model for evaluating in any new task or domain a new pre-training approach was proposed which involves an additional pre-training on synthetic data. Text segments from wikipedia are collected and then augmented with techniques like word-replacements, back-translation, etc to form synthetic pairs $(x,x')$ and then trained on objectives like BLUE, ROGUE scores, back-translation probability, natural language inference, etc.
+	- **Question Answering - Question generation** (QA-QG): This paradigm can be used to measure consistency of any candidate with reference text. The method works by first forming pairs of (answer candidates, questions) from the candidate text and then comparing and verifying the answers generated for the same set of questions given the reference text.
+
+	![qa-qg.png](/images/image-1719589460433-83.png)
+
+
+### LLM assisted methods
+
+
+As the name indicates the methods discussed in this section makes use of large language models to evaluate LLM generations. The caveat here is to leverage LLMs capabilities and form paradigms to minimise the effect of different biases that LLM might have like preferring one’s own output over other LLMs output. 
+
+
+**GPTScore**  One of the earliest approaches to using LLM as evaluators. The work explores the ability of ability if LLM in evaluating multiple aspects of generated text such as informativeness, relevancy, etc. This required defining an evaluation template $T(.)$ suitable for each of the desired aspects. The approach assumes that the LLM will assign higher token probabilities for higher quality generations and uses conditional probability of generating the target text (hypothesis) as evaluation metrics. For any given prompt d, candidate response h, context S and aspect a, GPT-score is given by 
+
+
+$$
+GPTscore(h|a,S,d) = \sum logp(h_t|h_{<t} T(d,a,S),\theta) 
+$$
+
+
+**G-Eval** is also very similar approach to to GPTscore as the the generated text is evaluated based on the criteria but unlike GPTscore directly performs evaluation by explicitly instructing the model to assign a score to generated text in 0 to 5 range. LLMs as known to have some bias during score assignment like preferring integer scores and bias towards particular number in the given range (for example 3 in 0-5 scale). To tackle the output score is multiple by the the token probability $p(i)$ 
+
+
+$$
+Score =\sum p(s_i) * s_i
+$$
+
+
+Even though both of these methods can be used for multi aspect evaluating including factuality, a better method to detect and quantify hallucinations without a reference text was proposed in **SelfCheckGPT** which leverages simple idea that if a LLM has knowledge of a given concept, sampled responses are likely to be similar and contain consistent facts. To measure information consistency between the generated responses one can use QA-QG paradigm, BERTScore, Entailment score, n-gram, etc. 
+
+
+## Possible pitfalls 
+
+
+Evaluating natural language generations still is an open research area. With the emergence of highly capable large language models the trend is going in the direction of using LLM itself to evaluation NLG. While this method has shown to have high correlation with human judgements (Is ChatGPT a Good NLG Evaluator?) here are some issues with this approach 
+
+- A Preliminary Study) some of the work has revealed the pitfalls on this approach. Works like (Large Language Models are not Fair Evaluators) has shown that LLM have a positional bias because of which it prefers response in a particular position as better.
+- LLM has also shown to prefer integers when assigning scores to candidate responses.
+- LLMs are also stochastic in nature which makes them assign different scores to same output when invoked separately.
+- When used to compare answers, it was found that GPT4 prefer its style of answering against even human written answers.
+
+## Evaluating LLM based application
+
+
+### Choosing evaluation metrics
+
+
+Evaluation metrics for LLM applications are chosen based on the mode of interaction and type of expected answer. There are primarily three forms of interactions with LLM
+
+- knowledge seeking : LLM is provided with a question or instruction and a truthful answer is expected. example, what is the population of India?
+- Text grounded: LLM is provided with a text and instruction and expect the answer to be fully grounded on given text. example, summarise the given text..
+- Creativity: LLM is provided with a question or instruction and a creative answer is expected. example, write a story about prince Ashoka.
+
+For each of these interaction or tasks the type of answer expected can be extractive, abstractive, short form, long-form or multi-choice.  
+
+
+For example, for an application of LLM in summarisation (text grounded + abstractive) of scientific papers, the faithfulness and consistency of the results with original document is non-trivial. 
+
+
+### Evaluating the evaluation method!
+
+
+Once you have formulated an evaluation strategy that suits your application you should evaluate your strategy before trusting it to quantify the performance of your experiments. Evaluation strategies are evaluated by quantifying their correlation against human judgement. 
+
+- Obtain or annotate a test set containing golden human annotated scores
+- Score the generations in test set using your method.
+- Measure the correlation between human annotated scores and automatic scores using correlation measures like kendal rank correlation coefficient.
+
+A score above or around 0.7 is generally regarded as good enough. This can be also used to improve the effectiveness of your evaluation strategy. 
+
+
+### Building your evaluation set
+
+
+Two fundamental criterions to ensure while forming the evaluating set for any ML problem are
+
+- The dataset should be large enough to yield statistically meaningful results
+- It should represent the data which is expected in production as a whole as much as possible.
+
+Forming an evaluating set for LLM based applications can be done incrementally. LLMs can also be leveraged to generated queries for the evaluation set using few shot prompting, tools like auto-evaluator can help with this. 
+
+
+A evaluation set curation with ground truth is expensive and time consuming, and maintaining such golden annotated test set against data drift is a very challenging task. This is something to try If an unsupervised LLM assisted methodology is not correlating well with your objectives. The presence of a reference answer can help in increasing the effectiveness of evaluation in certain aspects like factuality. 
+
+
+## Case studies
+
+
+[video](https://www.youtube.com/embed/mEv-2Xnb_Wk?si=Sb_xODz-NpK8M4Ik)
+
+
+## Challenges
+
+
+  
+
+
+## Conclusion
+
+
+## Citations
+

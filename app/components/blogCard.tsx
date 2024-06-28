@@ -18,7 +18,7 @@ export function BlogCard(props: {
       <img
         src={"images" + props.background || "/cover.jpg"}
         alt="Blog post cover"
-        width={300}
+        width={400}
         height={200}
         className="rounded-lg object-cover aspect-[3/2]"
       />
@@ -41,7 +41,7 @@ export function BlogCard(props: {
           {props.read} • {format(new Date(props.date), "dd LLLL yyyy")}
         </p>
         <Link
-          href={props.url}
+          href={`/blog/${props.url}`}
           className="inline-flex items-center gap-1 text-yellow-500 hover:text-yellow-600"
           prefetch={true}
         >

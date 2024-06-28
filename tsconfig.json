@@ -23,6 +23,6 @@
        "contentlayer/generated": ["./.contentlayer/generated"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "fetchNotion.mjs"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "fetchNotion.mjs", "app/api/cron/route.ts"],
   "exclude": ["node_modules"]
 }

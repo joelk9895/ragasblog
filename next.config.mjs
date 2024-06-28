@@ -1,9 +1,10 @@
 /** @type {import('next').NextConfig} */
-import { withContentlayer } from "next-contentlayer";
+
 const nextConfig = {
+  pageExtensions: ["js", "jsx", "ts", "tsx"],
   images: {
     domains: ["avatar.iran.liara.run", "s3-us-west-2.amazonaws.com"],
   },
 };
 
-export default withContentlayer(nextConfig);
+export default nextConfig;
