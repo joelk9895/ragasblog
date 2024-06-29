@@ -17,7 +17,7 @@ export interface Post {
   url: string;
   image: string;
 }
-
+export const revalidate = 10;
 export default function Component() {
   const allPosts = getAllPosts();
   console.log(allPosts);

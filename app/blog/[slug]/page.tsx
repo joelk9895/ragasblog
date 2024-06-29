@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { unified } from "unified";
-import { Node, Parent } from "unist";
+import { Node } from "unist";
 import remarkParse from "remark-parse";
 import remarkMath from "remark-math";
 import remarkRehype from "remark-rehype";
@@ -18,7 +18,15 @@ import Footer from "@/app/components/footer";
 
 interface PostPageProps {
   params: { slug: string };
-  content: string;
+}
+
+interface PostData {
+  title: string;
+  author: string;
+  authorAvatar: string;
+  date: string;
+  readTime: string;
+  image: string;
 }
 
 async function cleanContent(slug: string): Promise<string> {
@@ -52,6 +60,7 @@ async function cleanContent(slug: string): Promise<string> {
                 "https://www.youtube.com/embed/"
               );
             }
+            embedUrl += "?modestbranding=1&color=white";
 
             node.tagName = "iframe";
             node.properties = {
@@ -63,7 +72,7 @@ async function cleanContent(slug: string): Promise<string> {
               className: "w-full rounded-xl",
               referrerpolicy: "strict-origin-when-cross-origin",
               allow:
-                "accelerometer; color=white; modestbranding=1 autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture ",
+                "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture ",
               allowFullScreen: true,
             };
             node.children = [];
@@ -84,12 +93,14 @@ export async function generateStaticParams() {
   const slugs = posts.map((post) => post.replace(".mdx", ""));
   return slugs.map((slug) => ({ slug }));
 }
+
 export const revalidate = 10;
 
 export default async function PostPage({ params }: PostPageProps) {
   const { slug } = params;
   const content = await cleanContent(slug);
-  const { data } = matter(getPostContent(slug));
+  const fileContent = getPostContent(slug);
+  const { data } = matter(fileContent) as unknown as { data: PostData };
   console.log(data);
 
   return (
