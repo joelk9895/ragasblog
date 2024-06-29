@@ -91,6 +91,10 @@ interface Post {
 }
 
 async function fetchPages(databaseId: string): Promise<void> {
+  //check if the posts directory exists else create it
+  if (!fs.existsSync("posts")) {
+    fs.mkdirSync("posts");
+  }
   const response = await notion.databases.query({
     database_id: databaseId,
   });
