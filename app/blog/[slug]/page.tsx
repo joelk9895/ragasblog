@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { unified } from "unified";
-import { Node } from "unist";
+import { Node, Parent } from "unist";
 import remarkParse from "remark-parse";
 import remarkMath from "remark-math";
 import remarkRehype from "remark-rehype";
@@ -15,19 +15,10 @@ import matter from "gray-matter";
 import Image from "next/image";
 import { format } from "date-fns";
 import Footer from "@/app/components/footer";
-import { revalidatePath } from "next/cache";
 
 interface PostPageProps {
   params: { slug: string };
-}
-
-interface PostData {
-  title: string;
-  author: string;
-  authorAvatar: string;
-  date: string;
-  readTime: string;
-  image: string;
+  content: string;
 }
 
 async function cleanContent(slug: string): Promise<string> {
@@ -61,7 +52,6 @@ async function cleanContent(slug: string): Promise<string> {
                 "https://www.youtube.com/embed/"
               );
             }
-            embedUrl += "?modestbranding=1&color=white";
 
             node.tagName = "iframe";
             node.properties = {
@@ -73,7 +63,7 @@ async function cleanContent(slug: string): Promise<string> {
               className: "w-full rounded-xl",
               referrerpolicy: "strict-origin-when-cross-origin",
               allow:
-                "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture ",
+                "accelerometer; color=white; modestbranding=1 autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture ",
               allowFullScreen: true,
             };
             node.children = [];
@@ -92,14 +82,14 @@ export async function generateStaticParams() {
   const files = fs.readdirSync(folder);
   const posts = files.filter((file) => file.endsWith(".mdx"));
   const slugs = posts.map((post) => post.replace(".mdx", ""));
-  return slugs.map((slug) => ({ slug, revalidatePath: 10 }));
+  return slugs.map((slug) => ({ slug }));
 }
+export const revalidate = 10;
 
 export default async function PostPage({ params }: PostPageProps) {
   const { slug } = params;
   const content = await cleanContent(slug);
-  const fileContent = getPostContent(slug);
-  const { data } = matter(fileContent) as unknown as { data: PostData };
+  const { data } = matter(getPostContent(slug));
   console.log(data);
 
   return (

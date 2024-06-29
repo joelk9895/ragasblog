@@ -5,7 +5,6 @@ import "@code-hike/mdx/dist/index.css";
 import getAllPosts from "./components/getAllPosts";
 import { getPostMetadata } from "./components/getPostMetadata";
 import { tenorSans } from "./components/font";
-import { getStaticPaths } from "next/dist/build/templates/pages";
 
 export interface Post {
   _id: string;
@@ -18,7 +17,8 @@ export interface Post {
   url: string;
   image: string;
 }
-export default async function Component() {
+
+export default function Component() {
   const allPosts = getAllPosts();
   console.log(allPosts);
 
