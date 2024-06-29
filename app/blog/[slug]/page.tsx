@@ -15,6 +15,7 @@ import matter from "gray-matter";
 import Image from "next/image";
 import { format } from "date-fns";
 import Footer from "@/app/components/footer";
+import { Metadata } from "next";
 
 interface PostPageProps {
   params: { slug: string };
@@ -27,6 +28,7 @@ interface PostData {
   date: string;
   readTime: string;
   image: string;
+  summary: string;
 }
 
 async function cleanContent(slug: string): Promise<string> {
@@ -90,11 +92,26 @@ export async function generateStaticParams() {
   const folder = path.join(process.cwd(), "posts");
   const files = fs.readdirSync(folder);
   const posts = files.filter((file) => file.endsWith(".mdx"));
-  const slugs = posts.map((post) => post.replace(".mdx", ""));
-  return slugs.map((slug) => ({ slug }));
+  return posts.map((post) => ({
+    slug: post.replace(".mdx", ""),
+  }));
 }
 
-export const revalidate = 10;
+export const revalidate = 3600;
+
+export async function generateMetadata({
+  params,
+}: PostPageProps): Promise<Metadata> {
+  const { slug } = params;
+  const fileContent = getPostContent(slug);
+  const { data } = matter(fileContent) as unknown as { data: PostData };
+
+  return {
+    title: data.title,
+    description: data.summary,
+    authors: [{ name: data.author }],
+  };
+}
 
 export default async function PostPage({ params }: PostPageProps) {
   const { slug } = params;

@@ -68,7 +68,7 @@ reference string.
 - **Exact match:** measures the accuracy of candidate text by matching the generated text with the reference text. Any deviation from reference text will be counted as incorrect. This is only suitable in case of extractive and short form answers where minimal or no deviation from the reference text is expected.
 - **BLEU** (Bilingual Evaluation Understudy): It evaluates candidate text based on how much ngrams in generated text appear in reference text. This was originally proposed to evaluate machine translation systems.  Multiple ngram scores (2gram/3gram) can be calculated and combined using geometric average (BLEU-N). Since it is precision based metrics, it does not penalise False negatives.
 
-![Screenshot_2023-06-28_at_11.03.26_AM.png](/images/image-1719632848152-10.png)
+![Screenshot_2023-06-28_at_11.03.26_AM.png](/images/image-1719639221072-909.png)
 
 
 $$
@@ -93,11 +93,11 @@ The key idea here is to leverage vector representation of text from DL models th
 
 - **BERTScore**:  This is bi-encoded based approach, ie the candidate text and reference text are fed into the DL model separately to obtain embeddings. The token level embeddings are then used to calculate pairwise cosine similarity matrix. Then similarity scores of most similar tokens from reference to candidates are selected and used to calculate precision, recall and f1 score.
 
-	![Screenshot_2023-06-28_at_12.36.25_PM.png](/images/image-1719632849201-205.png)
+	![Screenshot_2023-06-28_at_12.36.25_PM.png](/images/image-1719639224039-698.png)
 
 - **MoverScore:** uses the concept of _word movers distance_ which suggests that distances and between embedded word vectors are to some degree semantically meaningful ( vector(king) - vector(queen) = vector(man) ) and uses contextual embeddings to calculate Euclidean similarity between n-grams. In contrast to BERTscore which allows one-to-one hard matching of words, MoverScore allows many-to-one matching as it uses soft/partial alignments.
 
-	![Screenshot_2023-06-28_at_1.49.17_PM.png](/images/image-1719632850467-257.png)
+	![Screenshot_2023-06-28_at_1.49.17_PM.png](/images/image-1719639224942-605.png)
 
 
 	Even though embeddings based methods are robust they assume that training and test data is identically distributed which may not always the case. 
@@ -110,12 +110,12 @@ The key idea here is to leverage vector representation of text from DL models th
 
 	- **Entailment score** : This method leverages natural language inference capabilities of language models to judge NLG. There are different variants of this method but the basic concept is to score the generation by using a NLI model to produce the entailment score against the reference text. This method can be very useful to ensure faithfulness for text grounded generation tasks like text summarisation.
 
-	![NLI.png](/images/image-1719632850878-854.png)
+	![NLI.png](/images/image-1719639225362-675.png)
 
 	- **BLEURT**: Introduces an approach to to combine expressivity and robustness by pre-training a fully learned metric on large amounts of synthetic data, before fine-tuning it on human ratings. The method makes use to BERT model to achieve this. To generalise the model for evaluating in any new task or domain a new pre-training approach was proposed which involves an additional pre-training on synthetic data. Text segments from wikipedia are collected and then augmented with techniques like word-replacements, back-translation, etc to form synthetic pairs $(x,x')$ and then trained on objectives like BLUE, ROGUE scores, back-translation probability, natural language inference, etc.
 	- **Question Answering - Question generation** (QA-QG): This paradigm can be used to measure consistency of any candidate with reference text. The method works by first forming pairs of (answer candidates, questions) from the candidate text and then comparing and verifying the answers generated for the same set of questions given the reference text.
 
-	![qa-qg.png](/images/image-1719632851273-994.png)
+	![qa-qg.png](/images/image-1719639225784-774.png)
 
 
 ### LLM assisted methods

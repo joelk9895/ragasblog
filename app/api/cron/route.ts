@@ -190,7 +190,14 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
     if (process.env.NOTION_DATABASE_ID) {
       await fetchPages(process.env.NOTION_DATABASE_ID);
-      return NextResponse.json({ message: "Success" });
+      const revalidateUrl = new URL("/api/revalidate", req.url);
+      revalidateUrl.searchParams.set(
+        "secret",
+        process.env.REVALIDATION_SECRET as string
+      );
+      await fetch(revalidateUrl.toString());
+
+      return NextResponse.json({ message: "Success and revalidated" });
     } else {
       return NextResponse.json(
         { message: "Please provide a NOTION_DATABASE_ID in .env file" },
