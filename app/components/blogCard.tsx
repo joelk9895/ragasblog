@@ -16,7 +16,7 @@ export function BlogCard(props: {
   return (
     <article className="flex gap-10 justify-center border-t-[0.3px] border-slate-500 w-screen pt-5">
       <img
-        src={"images" + props.background || "/cover.jpg"}
+        src={props.background || "/cover.jpg"}
         alt="Blog post cover"
         width={400}
         height={200}

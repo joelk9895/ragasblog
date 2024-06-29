@@ -2,12 +2,15 @@ import { Client } from "@notionhq/client";
 import { config } from "dotenv";
 import { NotionToMarkdown } from "notion-to-md";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import fs from "fs";
-import path from "path";
 import removeMd from "remove-markdown";
 import axios from "axios";
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
+import { put } from "@vercel/blob";
+import { initializeApp } from "firebase/app";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { app } from "../../components/firebase";
 config();
 
 const genAI = new GoogleGenerativeAI(
@@ -38,23 +41,47 @@ async function getSummary(text: string): Promise<string> {
   return summaryText.trim();
 }
 
-async function downloadImage(url: string, filePath: string): Promise<void> {
-  console.log(`Downloading image from ${url} to ${filePath}`);
+async function downloadImage(url: string, filename: string): Promise<string> {
+  console.log(`Downloading image from ${url}`);
 
-  const response = await axios({
-    url,
-    method: "GET",
-    responseType: "stream",
-  });
+  try {
+    const response = await axios({
+      url,
+      method: "GET",
+      responseType: "arraybuffer",
+    });
 
-  return new Promise((resolve, reject) => {
-    const writer = fs.createWriteStream(filePath);
-    response.data.pipe(writer);
-    writer.on("finish", resolve);
-    writer.on("error", reject);
-  });
+    const contentType = response.headers["content-type"];
+    const buffer = Buffer.from(response.data, "binary");
+
+    const blob = await put(filename, buffer, {
+      access: "public",
+      contentType: contentType,
+    });
+
+    console.log(`Image stored in blob storage: ${blob.url}`);
+    return blob.url;
+  } catch (error) {
+    console.error("Error downloading and storing image:", error);
+    throw error;
+  }
 }
 
+const storage = getStorage(app);
+const db = getFirestore(app);
+
+async function uploadToFirebaseStorage(
+  content: string,
+  filename: string
+): Promise<string> {
+  const storageRef = ref(storage, filename);
+  await uploadBytes(storageRef, Buffer.from(content));
+  return await getDownloadURL(storageRef);
+}
+
+async function saveToFirestore(slug: string, data: any): Promise<void> {
+  await setDoc(doc(db, "posts", slug), data);
+}
 interface Post {
   id: string;
   properties: {
@@ -91,18 +118,11 @@ interface Post {
 }
 
 async function fetchPages(databaseId: string): Promise<void> {
-  //check if the posts directory exists else create it
-  if (!fs.existsSync("posts")) {
-    fs.mkdirSync("posts");
-  }
   const response = await notion.databases.query({
     database_id: databaseId,
   });
 
   const posts: Post[] = response.results as unknown as Post[];
-  const existingFiles = fs
-    .readdirSync("posts")
-    .filter((file) => file.endsWith(".mdx"));
   const postSlugs = posts.map(
     (post) => post.properties.slug.rich_text[0].plain_text
   );
@@ -122,49 +142,45 @@ async function fetchPages(databaseId: string): Promise<void> {
     const mdString = n2m.toMarkdownString(mdBlocks);
     const readTime = calculateReadTime(mdString.parent);
 
-    const filePath = path.join("posts", `${slug}.mdx`);
     const newContent = mdString.parent;
     const updatedContent = await replaceImageUrlsWithLocalPaths(newContent);
 
-    if (fs.existsSync(filePath)) {
-      const existingContent = fs.readFileSync(filePath, "utf-8");
-      if (existingContent.includes(newContent)) {
-        console.log(
-          `Post ${i++} of ${posts.length} is already up to date at ${filePath}`
-        );
-        continue;
-      }
-    }
-    const imageFilePath = path.join("public/images", imageFileName);
-    await downloadImage(image, imageFilePath);
     const summary = await getSummary(newContent);
     const header = `---
 title: "${title}"
 date: ${date}
 author: "${author}"
 summary: "${summary}"
-image: "/${imageFileName}"
+image: "${image}"
 authorAvatar: "${authorAvatar}"
 readTime: "${readTime}"
 ---
 `;
     const content = header + updatedContent;
 
-    fs.writeFileSync(filePath, content);
+    // Upload content to Firebase Storage
+    const fileUrl = await uploadToFirebaseStorage(content, `${slug}.mdx`);
+
+    // Save metadata to Firestore
+    await saveToFirestore(slug, {
+      title,
+      date,
+      author,
+      summary,
+      image,
+      authorAvatar,
+      readTime,
+      fileUrl,
+    });
+
     console.log(
-      `Post ${i++} of ${posts.length} has been created at ${filePath}`
+      `Post ${i++} of ${
+        posts.length
+      } has been created in Firebase Storage and Firestore: ${fileUrl}`
     );
   }
-
-  // Delete local files that are no longer present in Notion
-  existingFiles.forEach((file) => {
-    const slug = file.replace(".mdx", "");
-    if (!postSlugs.includes(slug)) {
-      fs.unlinkSync(path.join("posts", file));
-      console.log(`Deleted post: ${file}`);
-    }
-  });
 }
+
 async function replaceImageUrlsWithLocalPaths(text: string): Promise<string> {
   const urlRegex = /(https?:\/\/[^\s]+(\.png|\.jpg|\.jpeg|\.gif)[^\s]*)/g;
   const matches = text.match(urlRegex);
@@ -178,11 +194,9 @@ async function replaceImageUrlsWithLocalPaths(text: string): Promise<string> {
 
     const extension = url.match(extensionRegex)![0];
     const fileName = `image-${uniqueId}${extension}`;
-    const localPath = path.join("public", "images", fileName);
     const newUrl = url.replace(")", "");
-    await downloadImage(newUrl, localPath);
+    const relativePath = await downloadImage(newUrl, fileName);
 
-    const relativePath = path.join("/images", fileName);
     console.log(`Replacing ${url} with ${relativePath}`);
     updatedText = updatedText.replace(newUrl, relativePath);
   }

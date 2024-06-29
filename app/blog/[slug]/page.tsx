@@ -1,5 +1,3 @@
-import fs from "fs";
-import path from "path";
 import { unified } from "unified";
 import { Node } from "unist";
 import remarkParse from "remark-parse";
@@ -10,12 +8,23 @@ import remarkGFM from "remark-gfm";
 import rehypeStringify from "rehype-stringify";
 import { visit } from "unist-util-visit";
 import "katex/dist/katex.min.css";
-import getPostContent from "@/app/components/getPostContent";
-import matter from "gray-matter";
 import Image from "next/image";
 import { format } from "date-fns";
 import Footer from "@/app/components/footer";
 import { Metadata } from "next";
+import { initializeApp } from "firebase/app";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  collection,
+  getDocs,
+} from "firebase/firestore";
+import { app } from "@/app/components/firebase";
+import matter from "gray-matter";
+
+// Initialize Firebase
+const db = getFirestore(app);
 
 interface PostPageProps {
   params: { slug: string };
@@ -29,12 +38,24 @@ interface PostData {
   readTime: string;
   image: string;
   summary: string;
+  fileUrl: string;
 }
 
-async function cleanContent(slug: string): Promise<string> {
-  const fileContent = getPostContent(slug);
-  const { content } = matter(fileContent);
+async function getPostContent(slug: string): Promise<string> {
+  const docRef = doc(db, "posts", slug);
+  const docSnap = await getDoc(docRef);
 
+  if (docSnap.exists()) {
+    const data = docSnap.data() as PostData;
+    const fileUrl = data.fileUrl;
+    const response = await fetch(fileUrl);
+    return await response.text();
+  } else {
+    throw new Error("Post not found");
+  }
+}
+
+async function cleanContent(content: string): Promise<string> {
   const result = await unified()
     .use(remarkParse)
     .use(remarkMath)
@@ -89,11 +110,10 @@ async function cleanContent(slug: string): Promise<string> {
 }
 
 export async function generateStaticParams() {
-  const folder = path.join(process.cwd(), "posts");
-  const files = fs.readdirSync(folder);
-  const posts = files.filter((file) => file.endsWith(".mdx"));
-  return posts.map((post) => ({
-    slug: post.replace(".mdx", ""),
+  const postsCollection = collection(db, "posts");
+  const postsSnapshot = await getDocs(postsCollection);
+  return postsSnapshot.docs.map((doc) => ({
+    slug: doc.id,
   }));
 }
 
@@ -103,27 +123,43 @@ export async function generateMetadata({
   params,
 }: PostPageProps): Promise<Metadata> {
   const { slug } = params;
-  const fileContent = getPostContent(slug);
-  const { data } = matter(fileContent) as unknown as { data: PostData };
+  const docRef = doc(db, "posts", slug);
+  const docSnap = await getDoc(docRef);
 
-  return {
-    title: data.title,
-    description: data.summary,
-    authors: [{ name: data.author }],
-  };
+  if (docSnap.exists()) {
+    const data = docSnap.data() as PostData;
+    return {
+      title: data.title,
+      description: data.summary,
+      authors: [{ name: data.author }],
+    };
+  } else {
+    return {
+      title: "Post not found",
+      description: "The requested post could not be found.",
+    };
+  }
 }
 
 export default async function PostPage({ params }: PostPageProps) {
   const { slug } = params;
-  const content = await cleanContent(slug);
-  const fileContent = getPostContent(slug);
-  const { data } = matter(fileContent) as unknown as { data: PostData };
-  console.log(data);
+  const docRef = doc(db, "posts", slug);
+  const docSnap = await getDoc(docRef);
+
+  if (!docSnap.exists()) {
+    return <div>Post not found</div>;
+  }
+
+  const data = docSnap.data() as PostData;
+  const fileContent = await getPostContent(slug);
+  const { content } = matter(fileContent);
+  const content1 = await cleanContent(content);
+  console.log(content1);
 
   return (
     <main className="w-screen flex flex-col items-center">
       <Image
-        src={"/images" + data.image}
+        src={data.image}
         alt={data.title}
         width={400}
         className="lg:w-[40%] h-[400px] object-contain md:w-[90vw] md:rounded-xl"
@@ -147,7 +183,7 @@ export default async function PostPage({ params }: PostPageProps) {
       </p>
       <div className="w-[90%] flex justify-center mb-10">
         <article className="prose prose-img:bg-white prose-img:rounded-xl prose-invert w-full sm:w-[90vw] sm:prose-sm">
-          <div dangerouslySetInnerHTML={{ __html: content }} />
+          <div dangerouslySetInnerHTML={{ __html: content1 }} />
         </article>
       </div>
       <Footer />

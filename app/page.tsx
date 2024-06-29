@@ -1,10 +1,10 @@
+import { Suspense } from "react";
 import { BlogCard } from "./components/blogCard";
 import Footer from "./components/footer";
-
 import "@code-hike/mdx/dist/index.css";
-import getAllPosts from "./components/getAllPosts";
-import { getPostMetadata } from "./components/getPostMetadata";
 import { tenorSans } from "./components/font";
+import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { app } from "./components/firebase";
 
 export interface Post {
   _id: string;
@@ -12,15 +12,49 @@ export interface Post {
   summary: string;
   authorAvatar: string;
   author: string;
-  date: string; // assuming date is a string from Gray Matter
+  date: string;
   readTime: string;
   url: string;
   image: string;
 }
-export const revalidate = 10;
-export default function Component() {
-  const allPosts = getAllPosts();
-  console.log(allPosts);
+
+const db = getFirestore(app);
+
+async function getPosts() {
+  const postsCollection = collection(db, "posts");
+  const postsSnapshot = await getDocs(postsCollection);
+  return postsSnapshot.docs.map(
+    (doc) =>
+      ({
+        _id: doc.id,
+        ...doc.data(),
+      } as Post)
+  );
+}
+
+function PostList({ posts }: { posts: Post[] }) {
+  console.log(posts);
+  return (
+    <div className="space-y-8 flex flex-col items-center w-screen">
+      {posts.map((post) => (
+        <BlogCard
+          key={post._id}
+          title={post.title}
+          summary={post.summary}
+          avatar={post.authorAvatar}
+          author={post.author}
+          date={post.date}
+          read={post.readTime}
+          url={post._id}
+          background={post.image}
+        />
+      ))}
+    </div>
+  );
+}
+
+export default async function Home() {
+  const allPosts = await getPosts();
 
   return (
     <main className="flex flex-col min-h-[100dvh] bg-black">
@@ -28,24 +62,9 @@ export default function Component() {
         <h1 className={`${tenorSans.className} text-3xl`}>ragas</h1>
       </header>
       <main className="container grid grid-cols-1 md:grid-cols-[3fr_1fr] gap-8 py-12 min-h-[80vh]">
-        <div className="space-y-8 flex flex-col items-center w-screen">
-          {allPosts.map(async (post) => {
-            const data: Post = await getPostMetadata(post);
-            return (
-              <BlogCard
-                key={data._id}
-                title={data.title}
-                summary={data.summary}
-                avatar={data.authorAvatar}
-                author={data.author}
-                date={data.date}
-                read={data.readTime}
-                url={post}
-                background={data.image}
-              />
-            );
-          })}
-        </div>
+        <Suspense fallback={<div>Loading posts...</div>}>
+          <PostList posts={allPosts} />
+        </Suspense>
       </main>
       <Footer />
     </main>
