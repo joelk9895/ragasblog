@@ -165,6 +165,7 @@ export default async function PostPage({ params }: PostPageProps) {
         className="lg:w-[40%] h-[400px] object-contain md:w-[90vw] md:rounded-xl"
         height={400}
       />
+      <h1>{data.title}</h1>
       <p className="flex">
         by{" "}
         {
