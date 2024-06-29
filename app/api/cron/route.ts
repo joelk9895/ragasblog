@@ -203,7 +203,7 @@ async function replaceImageUrlsWithLocalPaths(text: string): Promise<string> {
 
   return updatedText;
 }
-
+export const maxDuration = 60;
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
     if (process.env.NOTION_DATABASE_ID) {
