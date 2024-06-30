@@ -117,7 +117,7 @@ export async function generateStaticParams() {
   }));
 }
 
-export const revalidate = 3600;
+export const revalidate = 10;
 
 export async function generateMetadata({
   params,

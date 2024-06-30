@@ -52,7 +52,7 @@ function PostList({ posts }: { posts: Post[] }) {
     </div>
   );
 }
-
+export const revalidate = 10;
 export default async function Home() {
   const allPosts = await getPosts();
 
