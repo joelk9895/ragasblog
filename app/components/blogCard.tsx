@@ -28,14 +28,24 @@ export function BlogCard(props: {
           {props.summary || "No summary provided"}
         </p>
         <div className="flex gap-2 items-center">
-          <Image
+          {/* <Image
             src={props.avatar || "/avatar.jpg"}
             width={30}
             height={30}
             alt="Author's avatar"
             className="rounded-full"
+          /> */}
+          <Image
+            src={
+              "https://cdn.hashnode.com/res/hashnode/image/upload/v1624556451478/DbBnjCmyP.jpeg?w=500&h=500&fit=crop&crop=faces&auto=compress,format&format=webp"
+            }
+            width={30}
+            height={30}
+            alt="Author's avatar"
+            className="rounded-full mx-2"
           />
-          <p>{props.author}</p>
+          {/* <p>{props.author}</p> */}
+          <p>jjmachan</p>
         </div>
         <p className="text-gray-500 dark:text-gray-400">
           {props.read} • {format(new Date(props.date), "dd LLLL yyyy")}
