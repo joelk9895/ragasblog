@@ -15,7 +15,7 @@ export interface Post {
   date: string;
   readTime: string;
   url: string;
-  image: string;
+  imageUrl: string;
 }
 
 const db = getFirestore(app);
@@ -46,7 +46,7 @@ function PostList({ posts }: { posts: Post[] }) {
           date={post.date}
           read={post.readTime}
           url={post._id}
-          background={post.image}
+          background={post.imageUrl}
         />
       ))}
     </div>
@@ -57,11 +57,14 @@ export default async function Home() {
   const allPosts = await getPosts();
 
   return (
-    <main className="flex flex-col min-h-[100dvh] bg-black">
-      <header className="dark:text-white py-4 px-6 md:px-8 lg:px-10">
-        <h1 className={`${tenorSans.className} text-3xl`}>ragas</h1>
+    <main className="flex flex-col min-h-[100dvh] bg-amber-50 text-black">
+      <header className="py-4 px-6 md:px-8 lg:px-10 bg-white head sticky top-0 left-0">
+        <div className="w-full h-[100%] bg-gradient-to-b from-transparent  to-amber-50 absolute bottom-0 right-0 -z-10"></div>
+        <h1 className={`${tenorSans.className} text-3xl z-50 text-black`}>
+          ragas
+        </h1>
       </header>
-      <main className="container grid grid-cols-1 md:grid-cols-[3fr_1fr] gap-8 py-12 min-h-[80vh]">
+      <main className="container grid grid-cols-1 md:grid-cols-[3fr_1fr] gap-8 py-12 min-h-[85vh] overflow-visible z-20">
         <Suspense fallback={<div>Loading posts...</div>}>
           <PostList posts={allPosts} />
         </Suspense>

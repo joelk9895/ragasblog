@@ -6,8 +6,6 @@ import removeMd from "remove-markdown";
 import axios from "axios";
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
-import { put } from "@vercel/blob";
-import { initializeApp } from "firebase/app";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
 import { app } from "../../components/firebase";
@@ -41,9 +39,10 @@ async function getSummary(text: string): Promise<string> {
   return summaryText.trim();
 }
 
-async function downloadImage(url: string, filename: string): Promise<string> {
-  console.log(`Downloading image from ${url}`);
-
+async function downloadImageBuffer(
+  url: string,
+  filename: string
+): Promise<Buffer> {
   try {
     const response = await axios({
       url,
@@ -54,13 +53,25 @@ async function downloadImage(url: string, filename: string): Promise<string> {
     const contentType = response.headers["content-type"];
     const buffer = Buffer.from(response.data, "binary");
 
-    const blob = await put(filename, buffer, {
-      access: "public",
-      contentType: contentType,
+    return buffer;
+  } catch (error) {
+    console.error("Error downloading and storing image:", error);
+    throw error;
+  }
+}
+async function downloadImage(url: string, filename: string): Promise<string> {
+  try {
+    const response = await axios({
+      url,
+      method: "GET",
+      responseType: "arraybuffer",
     });
 
-    console.log(`Image stored in blob storage: ${blob.url}`);
-    return blob.url;
+    const contentType = response.headers["content-type"];
+    const buffer = Buffer.from(response.data, "binary");
+    const imageRef = ref(storage, filename);
+    await uploadBytes(imageRef, buffer);
+    return await getDownloadURL(imageRef);
   } catch (error) {
     console.error("Error downloading and storing image:", error);
     throw error;
@@ -126,11 +137,9 @@ async function fetchPages(databaseId: string): Promise<void> {
   const postSlugs = posts.map(
     (post) => post.properties.slug.rich_text[0].plain_text
   );
-  console.log(postSlugs);
 
   let i = 1;
   for (const post of posts) {
-    console.log(post);
     const title = post.properties.title.title[0].plain_text;
     const slug = post.properties.slug.rich_text[0].plain_text;
     const image = post.properties.Background.files[0].file.url;
@@ -141,17 +150,23 @@ async function fetchPages(databaseId: string): Promise<void> {
     const mdBlocks = await n2m.pageToMarkdown(post.id);
     const mdString = n2m.toMarkdownString(mdBlocks);
     const readTime = calculateReadTime(mdString.parent);
-
     const newContent = mdString.parent;
     const updatedContent = await replaceImageUrlsWithLocalPaths(newContent);
 
     const summary = await getSummary(newContent);
+    const imageRef = ref(storage, imageFileName);
+    const imageBuffer = await downloadImageBuffer(image, imageFileName);
+    const fileMeta = {
+      contentType: "image/jpeg",
+    };
+    await uploadBytes(imageRef, Buffer.from(imageBuffer), fileMeta);
+    const imageUrl = await getDownloadURL(imageRef);
     const header = `---
 title: "${title}"
 date: ${date}
 author: "${author}"
 summary: "${summary}"
-image: "${image}"
+image: "${imageUrl}"
 authorAvatar: "${authorAvatar}"
 readTime: "${readTime}"
 ---
@@ -167,17 +182,11 @@ readTime: "${readTime}"
       date,
       author,
       summary,
-      image,
+      imageUrl,
       authorAvatar,
       readTime,
       fileUrl,
     });
-
-    console.log(
-      `Post ${i++} of ${
-        posts.length
-      } has been created in Firebase Storage and Firestore: ${fileUrl}`
-    );
   }
 }
 
@@ -197,7 +206,6 @@ async function replaceImageUrlsWithLocalPaths(text: string): Promise<string> {
     const newUrl = url.replace(")", "");
     const relativePath = await downloadImage(newUrl, fileName);
 
-    console.log(`Replacing ${url} with ${relativePath}`);
     updatedText = updatedText.replace(newUrl, relativePath);
   }
 

@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import Footer from "@/app/components/footer";
 import { Metadata } from "next";
 import { initializeApp } from "firebase/app";
+import "./style.css";
 import {
   getFirestore,
   doc,
@@ -22,6 +23,7 @@ import {
 } from "firebase/firestore";
 import { app } from "@/app/components/firebase";
 import matter from "gray-matter";
+import { tenorSans } from "@/app/components/font";
 
 // Initialize Firebase
 const db = getFirestore(app);
@@ -36,7 +38,7 @@ interface PostData {
   authorAvatar: string;
   date: string;
   readTime: string;
-  image: string;
+  imageUrl: string;
   summary: string;
   fileUrl: string;
 }
@@ -154,36 +156,57 @@ export default async function PostPage({ params }: PostPageProps) {
   const fileContent = await getPostContent(slug);
   const { content } = matter(fileContent);
   const content1 = await cleanContent(content);
-  console.log(content1);
 
   return (
-    <main className="w-screen flex flex-col items-center">
-      <Image
-        src={data.image}
-        alt={data.title}
-        width={400}
-        className="lg:w-[40%] h-[400px] object-contain md:w-[90vw] md:rounded-xl"
-        height={400}
-      />
-      <h1>{data.title}</h1>
-      <p className="flex">
+    <main className="w-screen flex flex-col items-center bg-amber-50 text-black">
+      <header className="py-4 px-6 md:px-8 lg:px-10 bg-white head sticky top-0 left-0 w-screen">
+        <div className="w-full h-[100%] bg-gradient-to-b from-transparent  to-amber-50 absolute bottom-0 right-0 -z-10"></div>
+        <h1 className={`${tenorSans.className} text-3xl z-50 text-black`}>
+          ragas
+        </h1>
+      </header>
+      <div className="relative mb-8">
+        <Image
+          src={data.imageUrl}
+          alt={data.title}
+          width={700}
+          className="w-[] h-[40vh] object-cover  relative"
+          height={400}
+          loading="eager"
+        />
+        <h1 className="absolute bottom-0 left-0 w-full h-fit p-3 bg-black font-bold text-2xl text-white">
+          {data.title}
+        </h1>
+      </div>
+
+      <p className="flex italic items-center">
         by{" "}
         {
+          // <Image
+          //   src={data.authorAvatar}
+          //   width={30}
+          //   height={30}
+          //   alt="Author's avatar"
+          //   className="rounded-full mx-2"
+          // />
           <Image
-            src={data.authorAvatar}
+            src={
+              "https://cdn.hashnode.com/res/hashnode/image/upload/v1624556451478/DbBnjCmyP.jpeg?w=500&h=500&fit=crop&crop=faces&auto=compress,format&format=webp"
+            }
             width={30}
             height={30}
             alt="Author's avatar"
-            className="rounded-full"
+            className="rounded-full mx-2"
           />
         }
-        {data.author}
+        {/* {data.author} */}
+        jjmachan
       </p>
       <p className="text-slate-500">
         {data.readTime} • {format(new Date(data.date), "dd LLLL yyyy")}
       </p>
       <div className="w-[90%] flex justify-center mb-10">
-        <article className="prose prose-img:bg-white prose-img:rounded-xl prose-invert w-full sm:w-[90vw] sm:prose-sm">
+        <article className="prose md:prose-xl prose-img:bg-amber-50 prose-img:rounded-xl prose-neutral w-full sm:w-[90vw] prose-sm ">
           <div dangerouslySetInnerHTML={{ __html: content1 }} />
         </article>
       </div>

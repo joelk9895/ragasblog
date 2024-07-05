@@ -14,7 +14,7 @@ export function BlogCard(props: {
   background?: string;
 }) {
   return (
-    <article className="flex gap-10 justify-center border-t-[0.3px] border-slate-500 w-screen pt-5">
+    <article className="flex gap-10 justify-center border-t-[0.3px] w-screen pt-5">
       <img
         src={props.background || "/cover.jpg"}
         alt="Blog post cover"
@@ -24,7 +24,7 @@ export function BlogCard(props: {
       />
       <div className="space-y-2 w-[40%]">
         <h2 className="text-4xl font-black tracking-tight">{props.title}</h2>
-        <p className="text-gray-500 dark:text-gray-400">
+        <p className="text-gray-800 ">
           {props.summary || "No summary provided"}
         </p>
         <div className="flex gap-2 items-center">
@@ -42,7 +42,7 @@ export function BlogCard(props: {
         </p>
         <Link
           href={`/blog/${props.url}`}
-          className="inline-flex items-center gap-1 text-yellow-500 hover:text-yellow-600"
+          className="inline-flex items-center gap-1 bg-slate-900 px-1 py-2 rounded-md text-yellow-500 hover:text-yellow-600"
           prefetch={true}
         >
           Read more
