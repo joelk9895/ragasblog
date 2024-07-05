@@ -58,7 +58,7 @@ export default async function Home() {
 
   return (
     <main className="flex flex-col min-h-[100dvh] bg-amber-50 text-black">
-      <header className="py-4 px-6 md:px-8 lg:px-10 bg-white head sticky top-0 left-0">
+      <header className="py-4 px-6 md:px-8 lg:px-10 bg-white head sticky top-0 left-0 z-20 border-b-[0.3px] ">
         <div className="w-full h-[100%] bg-gradient-to-b from-transparent  to-amber-50 absolute bottom-0 right-0 -z-10"></div>
         <h1 className={`${tenorSans.className} text-3xl z-50 text-black`}>
           ragas

@@ -14,7 +14,7 @@ export function BlogCard(props: {
   background?: string;
 }) {
   return (
-    <article className="flex gap-10 justify-center border-t-[0.3px] w-screen pt-5">
+    <article className="flex lg:flex-row flex-col gap-10 justify-center items-center w-screen pt-5">
       <img
         src={props.background || "/cover.jpg"}
         alt="Blog post cover"

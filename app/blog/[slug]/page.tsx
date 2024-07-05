@@ -159,7 +159,7 @@ export default async function PostPage({ params }: PostPageProps) {
 
   return (
     <main className="w-screen flex flex-col items-center bg-amber-50 text-black">
-      <header className="py-4 px-6 md:px-8 lg:px-10 bg-white head sticky top-0 left-0 w-screen">
+      <header className="py-4 px-6 md:px-8 lg:px-10 bg-white head sticky top-0 left-0 w-screen z-10">
         <div className="w-full h-[100%] bg-gradient-to-b from-transparent  to-amber-50 absolute bottom-0 right-0 -z-10"></div>
         <h1 className={`${tenorSans.className} text-3xl z-50 text-black`}>
           ragas
